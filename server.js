@@ -33,7 +33,6 @@ app.post('/transaction-add', (req, res) =>
             return;
         }
         totalPoints += parseInt(transaction.points);
-        console.log(totalPoints);
     });
 
     transactions = req.body;
@@ -44,6 +43,8 @@ app.post('/transaction-add', (req, res) =>
         return new Date(x.timestamp) - new Date(y.timestamp);
     });
 
+    let i, j;
+    
     console.log(transactions);
     res.send("transaction recieved");
 });
@@ -51,6 +52,7 @@ app.post('/transaction-add', (req, res) =>
 //spend POST request should subtract the oldest points from the user's account.
 //First search based on oldest points (look for oldest year, month, then day)
 //Then use all of those points.
+//Should recieve an object having points with the corresponding amount of points to spend
 app.post('/spend', (req, res) => 
 {
     let spendAmount = req.body.points;
@@ -61,10 +63,8 @@ app.post('/spend', (req, res) =>
         return;
     }
 
-    for(var i = 0; i < transactions.length; ++i) 
-    {
+    //now start subtracting oldest points until spendAmount = 0 (oldest points first in arr)
 
-    }
 });
 
 app.listen(3000);
