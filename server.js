@@ -1,71 +1,119 @@
 const express = require("express");
 const app = express();
+import { v4 as uuidv4 } from "uuid";
 
 app.use(express.json());
 
-var transactions;
-var totalPoints = 0;
+const receipts = new Map();
 
-app.get('/', (req, res) => 
+//remove this before submit! !!!!!!!!!!
+app.get("/", (req, res) => 
 {
-    res.send("Hello");
-})
+  res.send("Hello");
+});
 
-//transaction add should check the incoming POST request and 
+//transaction add should check the incoming POST request and
 //ensure that the data recieved is an ARRAY carrying OBJECTS of form
 // "payer": x "points": x "timestamp": x
-//AKA the format for transactions. Should also add new transactions to current list
-app.post('/transaction-add', (req, res) => 
+//AKA the format for transactions.
+//Should also add new transactions to current list
+app.post("/receipts/process", (req, res) => 
 {
-    //check that request has a body at all
-    if (req.body == null) 
-    {
-        res.send("No transactions found.");
-        return;
-    }
+  let data = req.body;
+  let totalPoints =
+    retailName(data.retailer) +
+    checkRoundDollar(data.total) +
+    checkMultiple(data.total);
+  totalPoints +=
+    numItems(data.items.length) +
+    purchaseDay(data.purchaseDate) +
+    purchaseTime(data.purchaseTime);
 
-    //check that each property is correct in each transaction object
-    req.body.forEach(transaction => 
-    {
-        if (!("payer" in transaction && "points" in transaction && "timestamp" in transaction))
-        {
-            res.send("Check that transactions are in the correct format: [{\"payer\": xxxx, \"points\": xxxx, \"timestamp\": \"2022-10-31T10:00:00Z\"}]");
-            return;
-        }
-        totalPoints += parseInt(transaction.points);
-    });
-
-    transactions = req.body;
-
-    //this sorts the transactions array by timestamps in descending order (oldest first)
-    transactions.sort(function(x, y)
-    {
-        return new Date(x.timestamp) - new Date(y.timestamp);
-    });
-
-    let i, j;
-    
-    console.log(transactions);
-    res.send("transaction recieved");
+  data.items.forEach((item) => 
+  {
+    totalPoints += checkDescription(item);
+  });
 });
 
-//spend POST request should subtract the oldest points from the user's account.
-//First search based on oldest points (look for oldest year, month, then day)
-//Then use all of those points.
-//Should recieve an object having points with the corresponding amount of points to spend
-app.post('/spend', (req, res) => 
+function purchaseTime(time)
 {
-    let spendAmount = req.body.points;
+  let points = 0;
+  let splitTime = time.split(':');
+  let earlyTime, lateTime, receiptTime = new Date();
+  earlyTime.setHours(14,0,0);
+  lateTime.setHours(16,0,0);
+  receiptTime.setHours(splitTime[0], splitTime[1], 0);
 
-    if (spendAmount > totalPoints)
+  if (receiptTime >= earlyTime && receiptTime <= lateTime)
+  {
+    points = 10;
+  }
+  return points;
+}
+//function to check if the purchase date is odd
+//and rewards points if so.
+//returns  6 points if odd, 0 points if not
+function purchaseDate(date)
+{
+  let points = 0;
+  let splitDate = date.split('-');
+
+  if (splitDate[2] % 2 != 0)
+  {
+    points = 6;
+  }
+  return points;
+}
+//returns 5 points for every 2 items on the receipt
+function numItems(itemsLength)
+{ 
+    return Math.floor(itemsLength / 2) * 5;
+}
+//Takes in the total spent from receipt data
+//and checks of it is a round dollar amount.
+//returns 50 points if a round amount is found,
+//if not sends no points.
+function checkRoundDollar(total) 
+{
+  let points = 0;
+  if (total % 1 != 0) 
+  {
+    points = 50;
+  }
+  return points;
+}
+
+//takes in the name of the retailer and counts each
+//alphanumeric character.
+// rName = string (retail name)
+// returns # of points awarded
+function retailName(rName) 
+{
+  let retail = rName.replace(/[^\w\s]/gi, "");
+  let points = 0;
+  retail.forEach((character) => {
+    if (character !== " ") 
     {
-        res.send("The amount of points you want to spend exceeds the current balance.");
-        return;
+      points += 1;
     }
+  });
 
-    //now start subtracting oldest points until spendAmount = 0 (oldest points first in arr)
+  return points;
+}
 
-});
+//checks that the total is a multiple of .25
+//by doing total (modulo) 0.25.
+//returns 25 points if it is a multiple,
+//and no points if it is not
+function checkMultiple(total) 
+{
+  let points = 0;
+
+  if (total % 0.25 == 0) 
+  {
+    points = 25;
+  }
+  return points;
+}
 
 app.listen(3000);
-
