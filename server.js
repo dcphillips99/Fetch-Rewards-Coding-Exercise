@@ -1,16 +1,10 @@
 const express = require("express");
+const { v4: uuidv4 } = require('uuid');
 const app = express();
-import { v4 as uuidv4 } from "uuid";
 
 app.use(express.json());
 
 const receipts = new Map();
-
-//remove this before submit! !!!!!!!!!!
-app.get("/", (req, res) => 
-{
-  res.send("Hello");
-});
 
 //transaction add should check the incoming POST request and
 //ensure that the data recieved is an ARRAY carrying OBJECTS of form
@@ -26,20 +20,53 @@ app.post("/receipts/process", (req, res) =>
     checkMultiple(data.total);
   totalPoints +=
     numItems(data.items.length) +
-    purchaseDay(data.purchaseDate) +
+    purchaseDate(data.purchaseDate) +
     purchaseTime(data.purchaseTime);
 
   data.items.forEach((item) => 
   {
     totalPoints += checkDescription(item);
   });
+
+  let id = uuidv4();
+  receipts.set(id, totalPoints);
+
+  res.json({ id : id });
 });
 
+app.get("/receipts/:id/points", (req, res) => 
+{
+  let id = req.params.id;
+  let retPoints = receipts.get(id);
+
+  res.send({ points: retPoints });
+});
+
+//Takes each item in "items" as input
+//Checks if the "short description" when trimmed 
+//has a length that is a multiple of 3.
+//If so, returns 0.2 * (item price) rounded up.
+function checkDescription(item)
+{
+  let points = 0;
+  let description = item.shortDescription;
+
+  if (description.length % 3 == 0)
+  {
+    points = Math.ceil(item.price * 0.2);
+  }
+  return points;
+}
+//Takes input of the purchase time and checks if
+//the time is inbetween 2pm and 4pm. Rewards
+//10 points if so, 0 if not.
 function purchaseTime(time)
 {
   let points = 0;
   let splitTime = time.split(':');
-  let earlyTime, lateTime, receiptTime = new Date();
+  let earlyTime = new Date();
+  let lateTime = new Date(); 
+  let receiptTime = new Date();
   earlyTime.setHours(14,0,0);
   lateTime.setHours(16,0,0);
   receiptTime.setHours(splitTime[0], splitTime[1], 0);
@@ -76,6 +103,7 @@ function numItems(itemsLength)
 function checkRoundDollar(total) 
 {
   let points = 0;
+
   if (total % 1 != 0) 
   {
     points = 50;
@@ -91,12 +119,14 @@ function retailName(rName)
 {
   let retail = rName.replace(/[^\w\s]/gi, "");
   let points = 0;
-  retail.forEach((character) => {
+
+  for (const character of retail) 
+  {
     if (character !== " ") 
     {
       points += 1;
     }
-  });
+  }
 
   return points;
 }
@@ -117,3 +147,13 @@ function checkMultiple(total)
 }
 
 app.listen(3000);
+
+module.exports = {
+  checkMultiple,
+  retailName,
+  checkRoundDollar,
+  numItems,
+  purchaseDate,
+  purchaseTime,
+  checkDescription
+}
