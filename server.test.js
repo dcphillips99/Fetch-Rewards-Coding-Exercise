@@ -36,3 +36,20 @@ test('Testing round dollar function with 3.50', ()=>
 {
     expect(server.checkRoundDollar(3.50)).toBe(0);
 });
+test('Item check multiple of 3 with Emil\'s cheese pizza', ()=> 
+{
+    expect(server.checkDescription(
+        {
+        "shortDescription": "Emils Cheese Pizza",
+        "price": "12.25"
+        })).toBe(3);
+});
+
+test('Item check multiple of 3 with Mountain Dew 12PK', ()=> 
+{
+    expect(server.checkDescription(
+        {
+            "shortDescription": "Mountain Dew 12PK",
+            "price": "6.49"
+        })).toBe(0);
+});
