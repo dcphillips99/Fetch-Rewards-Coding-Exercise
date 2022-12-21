@@ -104,7 +104,7 @@ function checkRoundDollar(total)
 {
   let points = 0;
 
-  if (total % 1 != 0) 
+  if ((total % 1) == 0) 
   {
     points = 50;
   }
