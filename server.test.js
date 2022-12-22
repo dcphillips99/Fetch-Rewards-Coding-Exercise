@@ -53,3 +53,12 @@ test('Item check multiple of 3 with Mountain Dew 12PK', ()=>
             "price": "6.49"
         })).toBe(0);
 });
+
+test('Item check with Klarbrunn 12-PK 12 FL OZ', () => 
+{
+    expect(server.checkDescription(
+        {
+            "shortDescription": "Klarbrunn 12-PK 12 FL OZ",
+            "price": "12"
+        })).toBe(3);
+})

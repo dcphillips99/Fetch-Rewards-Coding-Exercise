@@ -49,7 +49,7 @@ app.get("/receipts/:id/points", (req, res) =>
 function checkDescription(item)
 {
   let points = 0;
-  let description = item.shortDescription;
+  let description = item.shortDescription.trim();
 
   if (description.length % 3 == 0)
   {
